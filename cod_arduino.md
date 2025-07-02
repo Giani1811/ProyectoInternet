@@ -116,4 +116,4 @@ void loop() {
 
 
 
-este es el enlace del index que es el sitio web estatitco que esta consumineto literalmente la implementacion que se hizo del ESP32y el sensor de temperatura y humedad DTH11
+este es el enlace del index que es el sitio web estatitco que esta consumineto literalmente la implementacion que se hizo del ESP32y el sensor de temperatura y humedad DTH11, prueba 
