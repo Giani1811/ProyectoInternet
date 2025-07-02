@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor IoT - Temperatura y Humedad</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+        
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .sensor-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .sensor-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .sensor-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .sensor-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sensor-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 1rem;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+        
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .last-update {
+            text-align: center;
+            color: #666;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌡️ Monitor IoT en Tiempo Real</h1>
+        
+        <div id="loading" class="loading">Conectando con el sensor...</div>
+        
+        <div id="content" style="display: none;">
+            <div class="sensor-grid">
+                <div class="sensor-card">
+                    <div class="sensor-icon">🌡️</div>
+                    <div class="sensor-value" id="temperature">--</div>
+                    <div class="sensor-label">Temperatura °C</div>
+                </div>
+                
+                <div class="sensor-card">
+                    <div class="sensor-icon">💧</div>
+                    <div class="sensor-value" id="humidity">--</div>
+                    <div class="sensor-label">Humedad %</div>
+                </div>
+            </div>
+            
+            <div id="status" class="status">
+                Verificando conexión...
+            </div>
+            
+            <div class="last-update" id="lastUpdate">
+                Última actualización: --
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmIVNKvQWuiAih8F_HJZ9GivYQtk3UmEc",
+            authDomain: "monitor-iot-esp32.firebaseapp.com",
+            databaseURL: "https://monitor-iot-esp32-default-rtdb.firebaseio.com",
+            projectId: "monitor-iot-esp32",
+            storageBucket: "monitor-iot-esp32.firebasestorage.app",
+            messagingSenderId: "1068157465434",
+            appId: "1:1068157465434:web:1d7375144d8849d22e3963"
+        };
+        
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Referencias a los datos
+        const tempRef = database.ref('sensor/temperature');
+        const humRef = database.ref('sensor/humidity');
+        const timestampRef = database.ref('sensor/timestamp');
+        
+        let lastTimestamp = 0;
+        
+        // Escuchar cambios en temperatura
+        tempRef.on('value', (snapshot) => {
+            const temp = snapshot.val();
+            if (temp !== null) {
+                document.getElementById('temperature').textContent = temp.toFixed(1);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            }
+        });
+        
+        // Escuchar cambios en humedad
+        humRef.on('value', (snapshot) => {
+            const hum = snapshot.val();
+            if (hum !== null) {
+                document.getElementById('humidity').textContent = Math.round(hum);
+            }
+        });
+        
+        // Escuchar timestamp para verificar conexión
+        timestampRef.on('value', (snapshot) => {
+            const timestamp = snapshot.val();
+            if (timestamp !== null) {
+                lastTimestamp = Date.now();
+                updateStatus();
+                updateLastTime();
+            }
+        });
+        
+        // Verificar estado de conexión cada 5 segundos
+        setInterval(() => {
+            updateStatus();
+        }, 5000);
+        
+        function updateStatus() {
+            const now = Date.now();
+            const diff = now - lastTimestamp;
+            const statusEl = document.getElementById('status');
+            
+            // Si la última actualización fue hace menos de 30 segundos
+            if (diff < 30000) {
+                statusEl.textContent = '🟢 Sensor en línea';
+                statusEl.className = 'status online';
+            } else {
+                statusEl.textContent = '🔴 Sensor desconectado';
+                statusEl.className = 'status offline';
+            }
+        }
+        
+        function updateLastTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-ES');
+            const dateString = now.toLocaleDateString('es-ES');
+            document.getElementById('lastUpdate').textContent = 
+                `Última actualización: ${timeString} - ${dateString}`;
+        }
+    </script>
+</body>
+</html>
