@@ -222,7 +222,16 @@ export default {
         const minutes = Math.floor(diffInSeconds / 60)
         return `Hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
       } else {
-        return lastUpdate.toLocaleString('es-ES')
+        // Mostrar fecha y hora en zona horaria de Lima, Perú
+        return lastUpdate.toLocaleString('es-PE', {
+          timeZone: 'America/Lima',
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
       }
     })
 

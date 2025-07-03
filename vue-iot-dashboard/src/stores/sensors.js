@@ -94,8 +94,10 @@ export const useSensorsStore = defineStore('sensors', {
           this.addToHistory('humidity', data.humidity)
         }
         
-        if (data.timestamp) {
-          this.lastUpdate = new Date(data.timestamp)
+        if (data.timestamp && data.timestamp > 0) {
+          // Asegurar que el timestamp esté en milisegundos
+          const timestampMs = data.timestamp < 10000000000 ? data.timestamp * 1000 : data.timestamp
+          this.lastUpdate = new Date(timestampMs)
           this.updateConnectionStatus()
         }
         
@@ -105,7 +107,8 @@ export const useSensorsStore = defineStore('sensors', {
 
     // Agregar datos al historial
     addToHistory(type, value) {
-      const timestamp = new Date()
+      // Usar timestamp del sensor si está disponible, sino usar timestamp actual
+      const timestamp = this.lastUpdate || new Date()
       const dataPoint = { timestamp, value }
       
       if (type === 'temperature') {

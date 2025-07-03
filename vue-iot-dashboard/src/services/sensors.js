@@ -55,9 +55,22 @@ class SensorService {
     // Listener para timestamp
     const timestampListener = onValue(this.timestampRef, (snapshot) => {
       const timestamp = snapshot.val()
-      if (timestamp !== null) {
-        sensorData.timestamp = timestamp
-        console.log('⏰ Nuevo timestamp:', new Date(timestamp))
+      if (timestamp !== null && timestamp > 0) {
+        // Convertir timestamp de Firebase (que puede estar en segundos) a milisegundos
+        const timestampMs = timestamp < 10000000000 ? timestamp * 1000 : timestamp
+        sensorData.timestamp = timestampMs
+        
+        // Mostrar hora en zona horaria de Lima, Perú
+        const limaDate = new Date(timestampMs).toLocaleString('es-PE', {
+          timeZone: 'America/Lima',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+        console.log('⏰ Nuevo timestamp:', limaDate)
         callback({ ...sensorData })
       }
     }, (error) => {
