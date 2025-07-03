@@ -212,27 +212,18 @@ export default {
     const lastUpdateFormatted = computed(() => {
       if (!sensorsStore.lastUpdate) return 'Nunca'
       
-      const now = new Date()
       const lastUpdate = new Date(sensorsStore.lastUpdate)
-      const diffInSeconds = Math.floor((now - lastUpdate) / 1000)
       
-      if (diffInSeconds < 60) {
-        return `Hace ${diffInSeconds} segundos`
-      } else if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60)
-        return `Hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
-      } else {
-        // Mostrar fecha y hora en zona horaria de Lima, Perú
-        return lastUpdate.toLocaleString('es-PE', {
-          timeZone: 'America/Lima',
-          day: '2-digit',
-          month: '2-digit', 
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        })
-      }
+      // Siempre mostrar fecha y hora completa en zona horaria de Lima, Perú
+      return lastUpdate.toLocaleString('es-PE', {
+        timeZone: 'America/Lima',
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
     })
 
     // Métodos

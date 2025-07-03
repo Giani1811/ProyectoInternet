@@ -55,22 +55,26 @@ class SensorService {
     // Listener para timestamp
     const timestampListener = onValue(this.timestampRef, (snapshot) => {
       const timestamp = snapshot.val()
-      if (timestamp !== null && timestamp > 0) {
-        // Convertir timestamp de Firebase (que puede estar en segundos) a milisegundos
-        const timestampMs = timestamp < 10000000000 ? timestamp * 1000 : timestamp
-        sensorData.timestamp = timestampMs
-        
-        // Mostrar hora en zona horaria de Lima, Perú
-        const limaDate = new Date(timestampMs).toLocaleString('es-PE', {
-          timeZone: 'America/Lima',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        })
-        console.log('⏰ Nuevo timestamp:', limaDate)
+      console.log('📅 Timestamp crudo de Firebase:', timestamp)
+      
+      // Usar timestamp actual ya que el ESP32 está enviando valores incorrectos
+      const now = Date.now()
+      sensorData.timestamp = now
+      
+      // Mostrar hora en zona horaria de Lima, Perú
+      const limaDate = new Date(now).toLocaleString('es-PE', {
+        timeZone: 'America/Lima',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+      console.log('⏰ Timestamp actualizado a hora actual:', limaDate)
+      
+      // Solo llamar callback si hay timestamp (indica actividad del sensor)
+      if (timestamp !== null) {
         callback({ ...sensorData })
       }
     }, (error) => {

@@ -94,12 +94,13 @@ export const useSensorsStore = defineStore('sensors', {
           this.addToHistory('humidity', data.humidity)
         }
         
-        if (data.timestamp && data.timestamp > 0) {
-          // Asegurar que el timestamp esté en milisegundos
-          const timestampMs = data.timestamp < 10000000000 ? data.timestamp * 1000 : data.timestamp
-          this.lastUpdate = new Date(timestampMs)
-          this.updateConnectionStatus()
+        // Usar el timestamp ya corregido del servicio (que usa Date.now())
+        if (data.timestamp) {
+          this.lastUpdate = new Date(data.timestamp)
         }
+        
+        // Actualizar estado de conexión cada vez que recibimos datos
+        this.updateConnectionStatus()
         
         this.isLoading = false
       })
@@ -128,10 +129,18 @@ export const useSensorsStore = defineStore('sensors', {
 
     // Actualizar estado de conexión
     updateConnectionStatus() {
-      if (this.lastUpdate) {
-        const now = new Date()
-        const diffInSeconds = (now - this.lastUpdate) / 1000
-        this.isOnline = diffInSeconds < 30 // Online si datos < 30 segundos
+      // Si estamos recibiendo datos, estamos online
+      if (this.temperature !== null || this.humidity !== null) {
+        this.isOnline = true
+        
+        // Solo marcar offline si no hemos recibido datos en más de 30 segundos
+        if (this.lastUpdate) {
+          const now = new Date()
+          const diffInSeconds = (now - this.lastUpdate) / 1000
+          if (diffInSeconds > 30) {
+            this.isOnline = false
+          }
+        }
       } else {
         this.isOnline = false
       }

@@ -22,32 +22,8 @@
 
 <script>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  LineController,
-  Title,
-  Tooltip,
-  Legend,
-  TimeScale
-} from 'chart.js'
+import { Chart } from 'chart.js/auto'
 import 'chartjs-adapter-date-fns'
-
-// Registrar componentes de Chart.js
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  LineController,
-  Title,
-  Tooltip,
-  Legend,
-  TimeScale
-)
 
 export default {
   name: 'ChartComponent',
@@ -68,22 +44,22 @@ export default {
   
   setup(props) {
     const chartCanvas = ref(null)
-    const chartInstance = ref(null)
+    let chartInstance = null
     
     const hasData = computed(() => {
       return props.temperatureData.length > 0 || props.humidityData.length > 0
     })
     
     const chartData = computed(() => {
-      const tempData = props.temperatureData.map(item => ({
-        x: item.timestamp,
-        y: item.value
-      }))
+      const tempData = (props.temperatureData || []).map(item => ({
+        x: item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp),
+        y: parseFloat(item.value) || 0
+      })).filter(item => !isNaN(item.y) && item.x instanceof Date && !isNaN(item.x.getTime()))
       
-      const humData = props.humidityData.map(item => ({
-        x: item.timestamp,
-        y: item.value
-      }))
+      const humData = (props.humidityData || []).map(item => ({
+        x: item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp),
+        y: parseFloat(item.value) || 0
+      })).filter(item => !isNaN(item.y) && item.x instanceof Date && !isNaN(item.x.getTime()))
       
       return {
         datasets: [
@@ -121,7 +97,7 @@ export default {
       }
     })
     
-    const chartOptions = computed(() => ({
+    const chartOptions = {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
@@ -159,7 +135,14 @@ export default {
           callbacks: {
             title: function(context) {
               const date = new Date(context[0].parsed.x)
-              return date.toLocaleString('es-ES')
+              return date.toLocaleString('es-PE', {
+                timeZone: 'America/Lima',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
             },
             label: function(context) {
               const label = context.dataset.label
@@ -174,6 +157,15 @@ export default {
         x: {
           type: 'time',
           display: true,
+          time: {
+            tooltipFormat: 'dd/MM/yyyy HH:mm:ss',
+            displayFormats: {
+              hour: 'HH:mm',
+              day: 'dd/MM',
+              week: 'dd/MM',
+              month: 'MM/yyyy'
+            }
+          },
           title: {
             display: true,
             text: 'Tiempo',
@@ -186,7 +178,8 @@ export default {
           },
           ticks: {
             maxTicksLimit: 8,
-            color: '#6b7280'
+            color: '#6b7280',
+            autoSkip: true
           }
         },
         y: {
@@ -250,47 +243,70 @@ export default {
         duration: 750,
         easing: 'easeInOutQuart'
       }
-    }))
+    }
     
     const createChart = async () => {
       if (!chartCanvas.value || !hasData.value) return
       
       await nextTick()
       
-      // Destruir gráfico existente
-      if (chartInstance.value) {
-        chartInstance.value.destroy()
+      // Destruir gráfico existente de forma segura
+      destroyChart()
+      
+      try {
+        const ctx = chartCanvas.value.getContext('2d')
+        
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: chartData.value,
+          options: chartOptions
+        })
+      } catch (error) {
+        console.error('Error creando gráfico:', error)
       }
-      
-      const ctx = chartCanvas.value.getContext('2d')
-      
-      chartInstance.value = new ChartJS(ctx, {
-        type: 'line',
-        data: chartData.value,
-        options: chartOptions.value
-      })
     }
     
     const updateChart = () => {
-      if (!chartInstance.value || !hasData.value) {
-        createChart()
-        return
-      }
+      if (!hasData.value) return
       
-      chartInstance.value.data = chartData.value
-      chartInstance.value.update('none')
+      if (!chartInstance) {
+        createChart()
+      } else {
+        try {
+          chartInstance.data = chartData.value
+          chartInstance.update('none')
+        } catch (error) {
+          console.error('Error actualizando gráfico:', error)
+          createChart()
+        }
+      }
     }
     
-    // Watchers
+    const destroyChart = () => {
+      if (chartInstance) {
+        try {
+          chartInstance.destroy()
+          chartInstance = null
+        } catch (error) {
+          console.error('Error destruyendo gráfico:', error)
+        }
+      }
+    }
+    
+    // Watchers con debounce
+    let updateTimer = null
+    
     watch([() => props.temperatureData, () => props.humidityData], () => {
-      updateChart()
+      clearTimeout(updateTimer)
+      updateTimer = setTimeout(() => {
+        updateChart()
+      }, 300)
     }, { deep: true })
     
-    watch(() => props.isLoading, (newValue) => {
-      if (!newValue && hasData.value) {
-        nextTick(() => {
-          createChart()
-        })
+    watch(() => props.isLoading, async (newValue, oldValue) => {
+      if (oldValue === true && newValue === false && hasData.value) {
+        await nextTick()
+        createChart()
       }
     })
     
@@ -302,9 +318,8 @@ export default {
     })
     
     onUnmounted(() => {
-      if (chartInstance.value) {
-        chartInstance.value.destroy()
-      }
+      clearTimeout(updateTimer)
+      destroyChart()
     })
     
     return {
