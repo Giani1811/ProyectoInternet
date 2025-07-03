@@ -16,9 +16,9 @@ export const useSensorsStore = defineStore('sensors', {
     temperatureStatus: (state) => {
       if (state.temperature === null) return 'unknown'
       
-      if (state.temperature >= 10 && state.temperature <= 15) {
+      if (state.temperature >= 18 && state.temperature <= 22) {
         return 'optimal'
-      } else if (state.temperature > 15 && state.temperature <= 20) {
+      } else if (state.temperature > 22 && state.temperature <= 26) {
         return 'warning'
       } else {
         return 'critical'
@@ -28,9 +28,9 @@ export const useSensorsStore = defineStore('sensors', {
     humidityStatus: (state) => {
       if (state.humidity === null) return 'unknown'
       
-      if (state.humidity >= 50 && state.humidity <= 60) {
+      if (state.humidity >= 55 && state.humidity <= 65) {
         return 'optimal'
-      } else if (state.humidity > 60 && state.humidity <= 65) {
+      } else if (state.humidity > 65 && state.humidity <= 70) {
         return 'warning'
       } else {
         return 'critical'

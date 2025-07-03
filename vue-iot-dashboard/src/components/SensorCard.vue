@@ -96,9 +96,9 @@ export default {
     
     const optimalRange = computed(() => {
       if (props.type === 'temperature') {
-        return '10-15°C'
+        return '18-22°C'
       } else {
-        return '50-60%'
+        return '55-65%'
       }
     })
     
@@ -108,21 +108,21 @@ export default {
       const value = props.value
       
       if (props.type === 'temperature') {
-        if (value >= 10 && value <= 15) {
+        if (value >= 18 && value <= 22) {
           return 'En rango óptimo'
-        } else if (value > 15 && value <= 20) {
+        } else if (value > 22 && value <= 26) {
           return 'Temperatura elevada'
-        } else if (value > 20) {
+        } else if (value > 26) {
           return 'Muy alta - Riesgo'
         } else {
           return 'Muy baja - Riesgo'
         }
       } else {
-        if (value >= 50 && value <= 60) {
+        if (value >= 55 && value <= 65) {
           return 'En rango óptimo'
-        } else if (value > 60 && value <= 65) {
+        } else if (value > 65 && value <= 70) {
           return 'Humedad elevada'
-        } else if (value > 65) {
+        } else if (value > 70) {
           return 'Muy alta - Riesgo moho'
         } else {
           return 'Muy baja - Resecamiento'

@@ -132,8 +132,8 @@
               <h3>Óptimo</h3>
             </div>
             <div class="reference-values">
-              <p><strong>Temperatura:</strong> 10-15°C</p>
-              <p><strong>Humedad:</strong> 50-60%</p>
+              <p><strong>Temperatura:</strong> 18-22°C</p>
+              <p><strong>Humedad:</strong> 55-65%</p>
             </div>
           </div>
 
@@ -143,8 +143,8 @@
               <h3>Precaución</h3>
             </div>
             <div class="reference-values">
-              <p><strong>Temperatura:</strong> 15-20°C</p>
-              <p><strong>Humedad:</strong> 60-65%</p>
+              <p><strong>Temperatura:</strong> 22-26°C</p>
+              <p><strong>Humedad:</strong> 65-70%</p>
             </div>
           </div>
 
@@ -154,8 +154,8 @@
               <h3>Crítico</h3>
             </div>
             <div class="reference-values">
-              <p><strong>Temperatura:</strong> >20°C o <10°C</p>
-              <p><strong>Humedad:</strong> >65% o <50%</p>
+              <p><strong>Temperatura:</strong> >26°C o <18°C</p>
+              <p><strong>Humedad:</strong> >70% o <55%</p>
             </div>
           </div>
         </div>
